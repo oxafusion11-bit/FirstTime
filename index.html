@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b17">
+  <title>RaktSetu — Blood, found in minutes.</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --blood: #B5122E;
+      --bright-red: #E63850;
+      --white: #fff;
+      --muted: #c4c8d6;
+      --surface: rgb(19 23 39 / 82%);
+      --line: rgb(255 255 255 / 14%);
+      --ease-out: cubic-bezier(.2, .75, .25, 1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      color: var(--white);
+      background:
+        radial-gradient(ellipse at 50% 48%, rgb(91 12 35 / 25%), transparent 48%),
+        linear-gradient(145deg, #111a31 0%, #090d1b 54%, #05070e 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .scene {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      place-items: center;
+      width: min(100%, 520px);
+      perspective: 1000px;
+    }
+
+    .glow {
+      position: absolute;
+      z-index: -2;
+      width: 82%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgb(229 25 62 / 26%), rgb(181 18 46 / 12%) 38%, transparent 70%);
+      filter: blur(26px);
+      animation: glow-pulse 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .floaters {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .floater {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      color: rgb(230 56 80 / 58%);
+      font-weight: 700;
+      line-height: 1;
+      opacity: var(--opacity);
+      transform: translate3d(0, 0, 0);
+      animation: drift var(--duration) ease-in-out var(--delay) infinite alternate;
+      will-change: transform, opacity;
+    }
+
+    .floater.drop {
+      width: .72em;
+      height: .9em;
+      border-radius: 50% 50% 50% 0;
+      background: rgb(230 56 80 / 66%);
+    }
+    .floater.heart { color: rgb(230 56 80 / 54%); }
+    .floater.plus { color: rgb(255 255 255 / 44%); font-weight: 400; }
+    .floater.group {
+      min-width: 2.15em;
+      min-height: 2.15em;
+      border: 1px solid rgb(230 56 80 / 40%);
+      border-radius: 50%;
+      color: rgb(255 255 255 / 65%);
+      font-size: .64em !important;
+    }
+
+    .card-wrap {
+      width: 100%;
+      animation: float-card 6s ease-in-out infinite;
+      will-change: transform;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(22px, 5.5vw, 34px);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background:
+        linear-gradient(145deg, rgb(255 255 255 / 7%), transparent 44%),
+        var(--surface);
+      box-shadow:
+        0 28px 80px rgb(0 0 0 / 45%),
+        inset 0 1px 0 rgb(255 255 255 / 8%);
+      -webkit-backdrop-filter: blur(22px);
+      backdrop-filter: blur(22px);
+      transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+      transform-style: preserve-3d;
+      transition: transform 450ms var(--ease-out);
+    }
+
+    .card::before {
+      position: absolute;
+      top: 0;
+      left: 12%;
+      width: 76%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgb(255 255 255 / 42%), transparent);
+      content: "";
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 11px;
+      border: 1px solid rgb(230 56 80 / 38%);
+      border-radius: 999px;
+      background: rgb(181 18 46 / 13%);
+      color: #ff9aa8;
+      font-size: .69rem;
+      font-weight: 700;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 19px 0 18px;
+      font-size: 1.12rem;
+      font-weight: 750;
+      letter-spacing: -.025em;
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 36px;
+      overflow: visible;
+      filter: drop-shadow(0 0 12px rgb(230 56 80 / 38%));
+      transform-origin: 50% 65%;
+      animation: heartbeat 2.5s ease-in-out infinite;
+    }
+
+    h1 {
+      max-width: 420px;
+      margin: 0;
+      font-size: clamp(2.35rem, 10.1vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -.065em;
+      line-height: .99;
+      text-wrap: balance;
+    }
+
+    h1 span {
+      color: #ff536a;
+      text-shadow: 0 0 28px rgb(230 56 80 / 18%);
+    }
+
+    .tagline {
+      margin: 13px 0 22px;
+      color: var(--muted);
+      font-size: clamp(.9rem, 3.8vw, 1.05rem);
+      line-height: 1.5;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 22px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .chips li {
+      padding: 8px 10px;
+      border: 1px solid rgb(255 255 255 / 10%);
+      border-radius: 999px;
+      background: rgb(255 255 255 / 5%);
+      color: #e6e8ef;
+      font-size: .69rem;
+      font-weight: 550;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .blood-groups {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: clamp(5px, 1.8vw, 9px);
+      margin: 0 0 23px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .blood-groups li {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      border: 1px solid rgb(230 56 80 / 48%);
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgb(181 18 46 / 32%), rgb(181 18 46 / 10%));
+      color: #fff1f3;
+      font-size: clamp(.63rem, 2.7vw, .78rem);
+      font-weight: 750;
+      letter-spacing: -.04em;
+    }
+
+    .card-footer {
+      padding-top: 15px;
+      border-top: 1px solid rgb(255 255 255 / 11%);
+    }
+
+    .card-footer p {
+      margin: 0;
+      color: #c9ccda;
+      font-size: .72rem;
+      line-height: 1.55;
+    }
+
+    .card-footer .thanks {
+      margin-top: 9px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .partners {
+      display: flex;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .partners span {
+      padding: 5px 9px;
+      border: 1px solid rgb(255 91 112 / 90%);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgb(230 56 80 / 34%), rgb(181 18 46 / 24%));
+      color: #fff;
+      text-shadow: 0 0 10px rgb(255 120 140 / 70%);
+      box-shadow: 0 0 16px rgb(230 56 80 / 38%), inset 0 0 8px rgb(230 56 80 / 18%);
+      font-size: .65rem;
+      font-weight: 650;
+      letter-spacing: .02em;
+      animation: partner-highlight 2.4s ease-in-out infinite alternate;
+      will-change: transform, opacity;
+    }
+
+    .partners span:nth-child(2) {
+      animation-delay: -1.2s;
+    }
+
+    .replay {
+      margin-top: 18px;
+      padding: 9px 15px;
+      border: 1px solid rgb(255 255 255 / 20%);
+      border-radius: 999px;
+      background: rgb(255 255 255 / 7%);
+      color: #f7f7fa;
+      font: inherit;
+      font-size: .75rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .replay:hover, .replay:focus-visible {
+      border-color: rgb(230 56 80 / 70%);
+      background: rgb(181 18 46 / 22%);
+    }
+
+    .replay:focus-visible { outline: 2px solid #ff7b8d; outline-offset: 3px; }
+
+    .entrance {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    .playing .entrance {
+      animation: enter 650ms var(--ease-out) forwards;
+      animation-delay: calc(var(--line) * 100ms + 120ms);
+    }
+
+    @keyframes enter {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float-card {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes glow-pulse {
+      0%, 100% { opacity: .58; transform: scale(.94); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
+    @keyframes heartbeat {
+      0%, 38%, 100% { transform: scale(1); }
+      12% { transform: scale(1.12); }
+      22% { transform: scale(.98); }
+      30% { transform: scale(1.08); }
+    }
+
+    @keyframes partner-highlight {
+      from { opacity: .78; transform: scale(1); }
+      to { opacity: 1; transform: scale(1.06); }
+    }
+
+    @keyframes drift {
+      0% { transform: translate3d(0, 0, 0) rotate(-8deg); }
+      100% { transform: translate3d(var(--sway), -22px, 0) rotate(9deg); }
+    }
+
+    @media (max-width: 370px) {
+      body { padding: 12px; }
+      .card { padding: 19px; border-radius: 24px; }
+      .brand { margin: 14px 0; }
+      .tagline { margin-bottom: 16px; }
+      .chips { gap: 6px; margin-bottom: 17px; }
+      .chips li { padding: 7px 8px; font-size: .64rem; }
+      .blood-groups { margin-bottom: 17px; }
+      .card-footer { padding-top: 12px; }
+      .replay { margin-top: 13px; }
+    }
+
+    @media (max-height: 720px) {
+      body { padding-block: 10px; }
+      .card { padding-block: 20px; }
+      .brand { margin-block: 12px; }
+      .tagline { margin-block: 9px 15px; }
+      .chips { margin-bottom: 15px; }
+      .blood-groups { margin-bottom: 16px; }
+      .card-footer { padding-top: 11px; }
+      .card-footer .thanks { margin-top: 6px; }
+      .partners { margin-top: 8px; }
+      .replay { margin-top: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .entrance { opacity: 1; transform: none; }
+      .floater { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="floaters" aria-hidden="true"></div>
+  <main class="scene">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="card-wrap">
+      <article class="card" aria-labelledby="headline">
+        <div class="eyebrow entrance" style="--line: 0">#myfirstcode</div>
+        <div class="brand entrance" style="--line: 1">
+          <svg class="brand-mark" viewBox="0 0 32 40" aria-hidden="true">
+            <path d="M16 2C12.2 8.6 4.5 16.3 4.5 24.2A11.5 11.5 0 0 0 27.5 24C27.5 16.2 19.8 8.6 16 2Z" fill="#B5122E" stroke="#FF7183" stroke-width="1.5"/>
+            <path d="M10 25.2c.2 3.6 2.5 5.8 5.8 6.1" fill="none" stroke="#FFD5DB" stroke-linecap="round" stroke-width="2"/>
+          </svg>
+          <span>RaktSetu</span>
+        </div>
+        <h1 class="entrance" id="headline" style="--line: 2">Blood, found<br><span>in minutes.</span></h1>
+        <p class="tagline entrance" style="--line: 3">The bridge between a donor and a patient.</p>
+        <ul class="chips entrance" style="--line: 4" aria-label="How RaktSetu helps">
+          <li>Match by blood group</li>
+          <li>Nearest donors first</li>
+          <li>One-tap WhatsApp contact</li>
+        </ul>
+        <ul class="blood-groups entrance" style="--line: 5" aria-label="Blood groups">
+          <li>A+</li><li>A-</li><li>B+</li><li>B-</li>
+          <li>AB+</li><li>AB-</li><li>O+</li><li>O-</li>
+        </ul>
+        <footer class="card-footer entrance" style="--line: 6">
+          <p>My first website, built with GitHub Copilot for the #myfirstcode challenge on Goodwall.</p>
+          <p class="thanks">Thank you, Goodwall and GitHub, for this opportunity.</p>
+          <div class="partners" aria-label="Made with GitHub and Goodwall">
+            <span>GitHub</span><span>Goodwall</span>
+          </div>
+        </footer>
+      </article>
+    </div>
+    <button class="replay entrance" style="--line: 7" type="button">Replay</button>
+  </main>
+
+  <script>
+    function createFloatingElements() {
+      const container = document.querySelector(".floaters");
+      const types = [
+        { className: "drop", content: "" },
+        { className: "heart", content: "♥" },
+        { className: "plus", content: "+" },
+        { className: "group", content: "O+" },
+        { className: "group", content: "A-" },
+        { className: "group", content: "B+" }
+      ];
+
+      for (let i = 0; i < 15; i += 1) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        const element = document.createElement("span");
+        const size = 12 + Math.random() * 18;
+        element.className = `floater ${type.className}`;
+        element.textContent = type.content;
+        element.style.left = `${3 + Math.random() * 94}%`;
+        element.style.top = `${4 + Math.random() * 88}%`;
+        element.style.fontSize = `${size}px`;
+        element.style.setProperty("--opacity", `${0.3 + Math.random() * 0.45}`);
+        element.style.setProperty("--duration", `${4 + Math.random() * 6}s`);
+        element.style.setProperty("--delay", `${-Math.random() * 8}s`);
+        element.style.setProperty("--sway", `${Math.round((Math.random() - 0.5) * 40)}px`);
+        container.append(element);
+      }
+    }
+
+    function replayEntrance() {
+      const scene = document.querySelector(".scene");
+      scene.classList.remove("playing");
+      void scene.offsetWidth;
+      scene.classList.add("playing");
+    }
+
+    createFloatingElements();
+    replayEntrance();
+    document.querySelector(".replay").addEventListener("click", replayEntrance);
+
+    const card = document.querySelector(".card");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    if (!reduceMotion.matches) {
+      document.addEventListener("pointermove", (event) => {
+        const bounds = card.getBoundingClientRect();
+        const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+        const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+        card.style.setProperty("--tilt-x", `${Math.max(-4, Math.min(4, -y * 4))}deg`);
+        card.style.setProperty("--tilt-y", `${Math.max(-4, Math.min(4, x * 4))}deg`);
+      }, { passive: true });
+
+      card.addEventListener("pointerleave", () => {
+        card.style.setProperty("--tilt-x", "0deg");
+        card.style.setProperty("--tilt-y", "0deg");
+      });
+
+      window.addEventListener("deviceorientation", (event) => {
+        if (event.beta === null || event.gamma === null) return;
+        card.style.setProperty("--tilt-x", `${Math.max(-4, Math.min(4, (event.beta - 45) / 12))}deg`);
+        card.style.setProperty("--tilt-y", `${Math.max(-4, Math.min(4, event.gamma / 12))}deg`);
+      }, { passive: true });
+    }
+  </script>
+</body>
+</html>
